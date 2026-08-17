@@ -11,7 +11,11 @@ async function bootstrap() {
      transform:true
     }))
   app.use(cookieParser());
-  app.enableCors({ origin: 'http://localhost:5173', credentials: true });
+  const allowedOrigins = ['http://localhost:5173'];
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+  app.enableCors({ origin: allowedOrigins, credentials: true });
   await app.listen(PORT);
   console.log("App is running on port : " + PORT)
 }
