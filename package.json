@@ -1,0 +1,12 @@
+{
+  "name": "chatbot-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:server": "yarn workspace server startdev",
+    "dev:web": "yarn workspace web dev",
+    "dev": "npx concurrently \"yarn dev:server\" \"yarn dev:web\""
+  }
+}
