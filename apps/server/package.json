@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
-    "postbuild": "xcopy /E /I /Y src\\generated dist\\generated",
+    "postbuild": "node -e \"require('fs').cpSync('src/generated', 'dist/generated', {recursive: true, force: true})\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "startdev": "nest start --watch",
