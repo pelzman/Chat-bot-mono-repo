@@ -103,6 +103,34 @@ export class ChatService {
     return aiMessage;
   }
 
+  async getConversations(userId: string) {
+    return this.prisma.conversation.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+  }
+
+  async getConversationMessages(conversationId: string, userId: string) {
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, userId }
+    });
+    
+    if (!conversation) {
+      throw new Error('Conversation not found or unauthorized');
+    }
+
+    return this.prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   // --- GROQ AI METHODS ---
 
   private async callAISummarization(text: string): Promise<string> {

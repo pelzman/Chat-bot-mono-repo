@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { loginUser, registerUser, sendMessage, getMe, logoutUser } from './api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { loginUser, registerUser, sendMessage, getMe, logoutUser, getConversations, getConversationMessages } from './api/client';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card';
@@ -156,15 +156,55 @@ function AuthScreen({ onLogin, isLogin, setIsLogin }: any) {
 }
 
 function ChatScreen({ user, onLogout }: any) {
+  const queryClient = useQueryClient();
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([
     { id: '1', role: 'system', content: 'Hello! I am your AI assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
 
+  const { data: conversations = [] } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: getConversations
+  });
+
+  const initialLoadDone = React.useRef(false);
+  React.useEffect(() => {
+    if (!initialLoadDone.current && conversations.length > 0) {
+      setConversationId(conversations[0].id);
+      initialLoadDone.current = true;
+    }
+  }, [conversations]);
+
+  const { data: history } = useQuery({
+    queryKey: ['messages', conversationId],
+    queryFn: () => conversationId ? getConversationMessages(conversationId) : null,
+    enabled: !!conversationId
+  });
+
+  React.useEffect(() => {
+    if (history) {
+      setMessages(history.map((m: any) => ({
+        id: m.id,
+        role: m.sender,
+        content: m.content
+      })));
+    }
+  }, [history]);
+
+  const handleNewChat = () => {
+    setConversationId(null);
+    setMessages([{ id: '1', role: 'system', content: 'Hello! I am your AI assistant. How can I help you today?' }]);
+  };
+
   const chatMutation = useMutation({
     mutationFn: sendMessage,
     onSuccess: (data) => {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: data.role || 'system', content: data.content || 'Message received' }]);
+      setMessages(prev => [...prev, { id: data.id || Date.now().toString(), role: data.sender || 'assistant', content: data.content || 'Message received' }]);
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      }
     },
     onError: () => {
       setMessages(prev => [...prev, { id: Date.now().toString(), role: 'system', content: 'Sorry, I encountered an error.' }]);
@@ -176,7 +216,7 @@ function ChatScreen({ user, onLogout }: any) {
     const newMessage = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
-    chatMutation.mutate({ content: input, userId: user.id });
+    chatMutation.mutate({ content: input, userId: user.id, conversationId });
   };
 
   return (
@@ -194,12 +234,23 @@ function ChatScreen({ user, onLogout }: any) {
             </p>
           </div>
         </div>
-        <div className="flex-1 p-4">
-          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Conversations</h3>
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Conversations</h3>
+            <Button onClick={handleNewChat} variant="ghost" size="sm" className="h-6 px-2 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-zinc-800/50 transition-colors">
+              New Chat
+            </Button>
+          </div>
           <div className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800/50 rounded-md transition-colors bg-zinc-800/50">
-              <div className="truncate">General Chat</div>
-            </button>
+            {conversations.map((conv: any) => (
+              <button
+                key={conv.id}
+                onClick={() => setConversationId(conv.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800/50 rounded-md transition-colors ${conversationId === conv.id ? 'bg-zinc-800/50 text-indigo-400' : ''}`}
+              >
+                <div className="truncate text-left w-full">{conv.summary || (conv.messages && conv.messages[0]?.content) || 'New Chat'}</div>
+              </button>
+            ))}
           </div>
         </div>
         <div className="p-4 border-t border-zinc-800">

@@ -28,7 +28,17 @@ export const getMe = async () => {
   return response.data;
 };
 
-export const sendMessage = async (data: {userId:string, content:string, conversationId?:string}) => {
+export const sendMessage = async (data: {userId:string, content:string, conversationId?:string | null}) => {
   const response = await apiClient.post('/chat/sendMessage', data);
+  return response.data;
+};
+
+export const getConversations = async () => {
+  const response = await apiClient.get('/chat/conversations');
+  return response.data;
+};
+
+export const getConversationMessages = async (conversationId: string) => {
+  const response = await apiClient.get(`/chat/conversations/${conversationId}/messages`);
   return response.data;
 };
