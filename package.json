@@ -5,8 +5,8 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:server": "yarn workspace server startdev",
-    "dev:web": "yarn workspace web dev",
-    "dev": "npx concurrently \"yarn dev:server\" \"yarn dev:web\""
+    "dev:server": "npm --workspace server run startdev",
+    "dev:web": "npm --workspace web run dev",
+    "dev": "npx concurrently \"npm run dev:server\" \"npm run dev:web\""
   }
 }
