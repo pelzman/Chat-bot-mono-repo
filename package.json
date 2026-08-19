@@ -8,5 +8,8 @@
     "dev:server": "npm --workspace server run startdev",
     "dev:web": "npm --workspace web run dev",
     "dev": "npx concurrently \"npm run dev:server\" \"npm run dev:web\""
+  },
+  "overrides": {
+    "rolldown": "1.2.4"
   }
 }

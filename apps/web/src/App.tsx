@@ -7,7 +7,7 @@ import { loginUser, registerUser, sendMessage, getMe, logoutUser, getConversatio
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card';
-import { Send, User as UserIcon, Bot, LogOut } from 'lucide-react';
+import { Send, User as UserIcon, Bot, LogOut, Menu, X } from 'lucide-react';
 
 function App() {
   const [user, setUser] = useState<{ id: string, name: string, email?: string } | null>(null);
@@ -164,6 +164,7 @@ function ChatScreen({ user, onLogout }: any) {
     { id: '1', role: 'system', content: 'Hello! I am your AI assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { data: conversations = [] } = useQuery({
     queryKey: ['conversations'],
@@ -222,19 +223,40 @@ function ChatScreen({ user, onLogout }: any) {
   };
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans">
+    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans relative overflow-hidden">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 border-r border-zinc-800 bg-zinc-950/50 flex flex-col">
-        <div className="p-4 border-b border-zinc-800 flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-            <Bot size={20} />
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 border-r border-zinc-800 bg-zinc-950 flex flex-col
+        transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Bot size={20} />
+            </div>
+            <div>
+              <h2 className="font-semibold text-zinc-100">AI Assistant</h2>
+              <p className="text-xs text-green-400 flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-green-400"></span> Online
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-zinc-100">AI Assistant</h2>
-            <p className="text-xs text-green-400 flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-green-400"></span> Online
-            </p>
-          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(false)} 
+            className="md:hidden text-zinc-400 hover:text-zinc-100 p-1"
+          >
+            <X size={20} />
+          </button>
         </div>
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
@@ -269,9 +291,23 @@ function ChatScreen({ user, onLogout }: any) {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center p-4 border-b border-zinc-800 bg-zinc-950">
+          <button 
+            onClick={() => setIsSidebarOpen(true)} 
+            className="mr-3 text-zinc-400 hover:text-zinc-100 p-1"
+          >
+            <Menu size={24} />
+          </button>
+          <div className="flex items-center gap-2">
+            <Bot size={20} className="text-indigo-400" />
+            <h1 className="font-semibold text-zinc-100">AI Assistant</h1>
+          </div>
+        </div>
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {messages.map(msg => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[80%] items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
